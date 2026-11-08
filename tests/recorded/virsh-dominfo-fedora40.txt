@@ -1,0 +1,15 @@
+Id:             3
+Name:           fedora40
+UUID:           6c1bfa52-7a51-4d6e-9e7f-2f0b7f3c9a10
+OS Type:        hvm
+State:          running
+CPU(s):         4
+CPU time:       1873.4s
+Max memory:     8388608 KiB
+Used memory:    8388608 KiB
+Persistent:     yes
+Autostart:      enable
+Managed save:   no
+Security model: selinux
+Security DOI:   0
+Security label: system_u:system_r:svirt_t:s0:c117,c839 (enforcing)

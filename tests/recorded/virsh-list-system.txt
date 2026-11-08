@@ -1,0 +1,5 @@
+ Id   Name       State
+---------------------------
+ 3    fedora40   running
+ 7    k3s-node   paused
+ -    win11      shut off

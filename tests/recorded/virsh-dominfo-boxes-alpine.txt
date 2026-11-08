@@ -1,0 +1,13 @@
+Id:             -
+Name:           boxes-alpine
+UUID:           9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b
+OS Type:        hvm
+State:          shut off
+CPU(s):         1
+Max memory:     1048576 KiB
+Used memory:    1048576 KiB
+Persistent:     yes
+Autostart:      disable
+Managed save:   no
+Security model: none
+Security DOI:   0

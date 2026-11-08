@@ -1,0 +1,4 @@
+ Name       State      Autostart   Persistent
+-----------------------------------------------
+ default    active     yes         yes
+ isolated   inactive   no          yes

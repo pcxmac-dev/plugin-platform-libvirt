@@ -1,0 +1,15 @@
+Id:             7
+Name:           k3s-node
+UUID:           0b9d5c1e-2f4a-4c8b-9d7e-3a6f1b2c4d5e
+OS Type:        hvm
+State:          paused
+CPU(s):         2
+CPU time:       312.9s
+Max memory:     4194304 KiB
+Used memory:    2097152 KiB
+Persistent:     yes
+Autostart:      disable
+Managed save:   no
+Security model: selinux
+Security DOI:   0
+Security label: system_u:system_r:svirt_t:s0:c402,c977 (enforcing)

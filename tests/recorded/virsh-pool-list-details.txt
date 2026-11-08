@@ -1,0 +1,4 @@
+ Name      State      Autostart   Persistent   Capacity     Allocation   Available
+-------------------------------------------------------------------------------------
+ default   running    yes         yes          467.89 GiB   201.13 GiB   266.76 GiB
+ iso       inactive   no          yes          -            -            -

@@ -1,0 +1,4 @@
+ Name            Creation Time               State
+------------------------------------------------------
+ clean-install   2024-04-30 21:12:05 +0200   shutoff
+ before-update   2024-05-11 08:01:44 +0200   running
