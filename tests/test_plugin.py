@@ -193,7 +193,7 @@ SYS = ["/usr/bin/virsh", "-c", "qemu:///system"]
 
 def test_the_plugin_its_hooks_and_its_probe():
     assert (MACHINE.name, MACHINE.title, MACHINE.ICON, MACHINE.KIND, MACHINE.STEPS, MACHINE.options) == (
-        "libvirt", "libvirt", "chip", "machine", (), ())
+        "libvirt", "libvirt", "libvirt", "machine", (), ())
     assert set(LibvirtPlugin(native="").interface()["hooks"]) == {"present", "status", "run", "power", "autostart", "snapshot",
                                                                   "revert", "service", "wake"}
     for word in ("virsh", "/dev/kvm", "kvm_intel", "kvm_amd", "vmx|svm", "pgrep -u 0", "XDG_RUNTIME_DIR", "virtqemud.socket",

@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "plugin-platform-libvirt"
-version = "0.1.0"  # the plugin's own release (CHANGELOG.md); the app shows it on the Plugins view
+version = "0.1.1"  # the plugin's own release (CHANGELOG.md); the app shows it on the Plugins view
 description = "libvirt for Liminal: the virtual machines libvirt runs with QEMU/KVM on the native Linux machine the platform runs on (qemu:///system's and the user's qemu:///session's), their snapshots, networks, storage pools, KVM and libvirt's services; changed only when asked."
 readme = "README.md"
 requires-python = ">=3.10"
 # the library it plugs into (the machine kind: liminal_libs.machines, plugin API 2.1; linux.why_not_native and
 # MachinePlugin.not_for_here since 1.27.0, machines.services since 1.28.0)
-dependencies = ["liminal-libs>=1.30.0"]
+dependencies = ["liminal-libs>=1.34.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]

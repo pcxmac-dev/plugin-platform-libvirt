@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 (2026-11-08)
+
+Its icon is libvirt's own mark (the user: "the platform icon matches libvirt's ... libvirt has a can of tuna as an
+icon"): its logo's open tin, turned, penguins packed head to toe and the lid rolled back on its key, drawn in the
+library's line (liminal-libs 1.34.0's `libvirt`), where it had borrowed the platform's chip. Needs liminal-libs>=1.34.0.
+
 ## 0.1.0 (2026-11-08)
 
 The first release (the user: "LXC/LXD plugins and LIBVIRT plugin for virtualization"; of the Linux plugins: "make sure

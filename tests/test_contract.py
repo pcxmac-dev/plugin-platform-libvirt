@@ -14,6 +14,6 @@ def test_every_plugin_here_conforms_to_the_class_contract():
     found = assert_module_conforms(module)
     assert found and all(p.api == "2.1" and not p.is_record for p in found)
     assert {p.SYSTEM for p in found} == {"platform"} and {p.KIND for p in found} == {"machine"}
-    assert {p.ICON for p in found} == {"chip"}
+    assert {p.ICON for p in found} == {"libvirt"}  # its own mark, not the platform's chip (the user, 2026-11-08)
     icons = (Path(liminal_libs.__file__).parent / "ui" / "static" / "icons.js").read_text(encoding="utf-8")
     assert {p.ICON for p in found} <= set(re.findall(r"(?m)^\s*([a-z]+):\s*'", icons))

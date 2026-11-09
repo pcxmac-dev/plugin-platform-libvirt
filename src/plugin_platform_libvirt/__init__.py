@@ -40,7 +40,7 @@ from liminal_libs.machines.plugin import CommandError, MachinePlugin
 from .inventory import ACTIVE, URIS, Connection, parse as parse_read, read_script, words_of
 from .system import (GROUPS, PROBE, Probe, distribution, family, init_words, install_words, kvm_words, parse as parse_probe)
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 SUDO_S = 300.0  # sudo -n's answer kept this long: a refusal is logged by sudo each time it is asked
 POWER = ("start", "shutdown", "reboot", "destroy")
 DONE = {"start": "started", "shutdown": "asked to shut down", "reboot": "asked to reboot", "destroy": "forced off"}
@@ -239,7 +239,7 @@ class LibvirtPlugin(MachinePlugin):
              "pools, KVM and libvirt's services; changed only when asked")
     api = "2.1"
     order = 706  # the machine's own instances: WSL's on Windows (700-702), LXC / LXD and libvirt on Linux
-    ICON = "chip"
+    ICON = "libvirt"  # its logo's tin of penguins, the lid rolled back on its key (liminal-libs 1.34.0)
     HOOKS = (*MachinePlugin.HOOKS, "power", "autostart", "snapshot", "revert", "service", "wake")
 
     def __init__(self, shell: Shell | None = None, runner=None, native: str | None = None):
