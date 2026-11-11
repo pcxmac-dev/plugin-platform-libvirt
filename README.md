@@ -10,7 +10,7 @@ scope of linux administration is only on native linux O/S"; "it's not for admini
 
 ## What it does
 
-A machine plugin of the platform (`liminal_libs.machines.MachinePlugin`, plugin API 2.1, its icon the chip), through
+A machine plugin of the platform (`liminal_libs.machines.MachinePlugin`, plugin API 2.2, its icon the chip), through
 the library's `machines.linux.Shell` on this machine:
 
 - **Read** through virsh in the C locale (its tables and dominfo's labels are translated otherwise), on both
@@ -76,6 +76,23 @@ qemu`).
 On Windows, on macOS and inside a WSL distribution (its kernel's release names Microsoft or WSL, or WSL's variables
 are set) it runs no command at all: its status says why with `applies` False, so the platform shows it as not for
 this machine and offers no setup; every hook is refused. The check is the library's (`machines.linux.why_not_native`).
+
+## Its API
+
+What it attaches to, as its page shows it (plugin API 2.2: `apis.py`, read on libvirt.org and the kernel's pages on
+2026-11-11), each one's parts and commands, those the plugin uses first and the rest after them:
+
+- **virsh (libvirt)**: [virsh](https://libvirt.org/manpages/virsh.html), the [API reference](https://libvirt.org/html/index.html)
+  (each command names the function it is), [connection URIs](https://libvirt.org/uri.html), the
+  [QEMU/KVM driver](https://libvirt.org/drvqemu.html), [the releases](https://libvirt.org/news.html).
+- **libvirt's daemons and services**: [libvirt's daemons](https://libvirt.org/daemons.html) (monolithic or modular, and
+  their sockets), [systemctl](https://www.freedesktop.org/software/systemd/man/latest/systemctl.html),
+  [OpenRC](https://github.com/OpenRC/openrc/blob/master/user-guide.md), [sudo](https://www.sudo.ws/docs/man/sudo.man/).
+- **KVM (the kernel's)**: [KVM](https://docs.kernel.org/virt/kvm/index.html) and [its API](https://docs.kernel.org/virt/kvm/api.html).
+
+`api_facts()` says what its last look and read said, asking nothing: virsh's version, each connection's counts, the
+daemons, the rights, the services, KVM. `LIMINAL_VENDOR_PAGES=1 pytest tests/test_apis.py` checks that every address on
+the cards still answers.
 
 ## Its hooks
 

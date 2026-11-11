@@ -37,10 +37,11 @@ from liminal_libs.machines import linux
 from liminal_libs.machines.linux import Shell
 from liminal_libs.machines.plugin import CommandError, MachinePlugin
 
+from . import apis as cards
 from .inventory import ACTIVE, URIS, Connection, parse as parse_read, read_script, words_of
 from .system import (GROUPS, PROBE, Probe, distribution, family, init_words, install_words, kvm_words, parse as parse_probe)
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 SUDO_S = 300.0  # sudo -n's answer kept this long: a refusal is logged by sudo each time it is asked
 POWER = ("start", "shutdown", "reboot", "destroy")
 DONE = {"start": "started", "shutdown": "asked to shut down", "reboot": "asked to reboot", "destroy": "forced off"}
@@ -237,7 +238,10 @@ class LibvirtPlugin(MachinePlugin):
     about = ("libvirt's virtual machines (QEMU/KVM) on the native Linux machine the platform runs on, never a WSL "
              "distribution: qemu:///system's and the user's qemu:///session's, their snapshots, the networks, the storage "
              "pools, KVM and libvirt's services; changed only when asked")
-    api = "2.1"
+    api = "2.2"
+    # what it attaches to (plugin API 2.2): virsh and the libvirt API under it, libvirt's daemons and services, KVM
+    # (apis.py: each one's pages, parts and calls)
+    apis = cards.APIS
     order = 706  # the machine's own instances: WSL's on Windows (700-702), LXC / LXD and libvirt on Linux
     ICON = "libvirt"  # its logo's tin of penguins, the lid rolled back on its key (liminal-libs 1.34.0)
     HOOKS = (*MachinePlugin.HOOKS, "power", "autostart", "snapshot", "revert", "service", "wake")
@@ -248,6 +252,8 @@ class LibvirtPlugin(MachinePlugin):
         self._native = native  # a test's word for why_not_native(): "" on a native Linux machine, else why not
         self._woken = False  # idle daemons and the session read once asked (Read now), until the platform lets it go
         self._sudo: tuple[float, bool] | None = None  # (when, whether sudo -n ran without a password)
+        # what the last look and read said (api_facts, plugin API 2.2): kept in one dict its copies share, asked nothing
+        self._learned: dict = {}
 
     def not_for_here(self) -> str:
         return why_not_native() if self._native is None else self._native
@@ -264,9 +270,59 @@ class LibvirtPlugin(MachinePlugin):
         return sh
 
     def detach(self) -> None:
-        """Let go by the platform: idle daemons and the session are no longer read until asked again."""
+        """Let go by the platform: idle daemons and the session are no longer read until asked again; what was learned
+        goes too."""
         self._woken = False
+        self._learned.clear()
         super().detach()
+
+    def _remember(self, ctx: Context, read: tuple = ()) -> None:
+        """What a look (and a read of its connections) said, kept for api_facts: no request of its own."""
+        p = ctx.probe
+        seen = {"at": time.time(), "virsh": p.virsh, "version": p.version, "kvm": kvm_words(p)[0], "init": init_words(p),
+                "distribution": distribution(p), "units": {u.name: u.state for u in p.units.values() if u.known}}
+        if p.virsh:
+            seen.update(mode=self._mode_words(ctx), system=self._system_words(ctx), session=self._session_words(ctx),
+                        rights=ctx.access.words if ctx.access else "", sudo=self._sudo)
+        for c in read:
+            seen[f"read {c.name}"] = ({"domains": len(c.domains), "running": sum(d.running for d in c.domains),
+                                       "snapshots": len(c.snapshots), "networks": len(c.networks), "pools": len(c.pools),
+                                       "problems": list(c.problems)} if c.read else None)
+        self._learned.update(seen)
+
+    def api_facts(self) -> dict:
+        """What it learned of its APIs while it ran (plugin API 2.2), asking nothing: virsh and its version, what each
+        connection's last read held and its troubles; the daemons (monolithic or modular, each part's state), the rights
+        and whether sudo -n answered, the init system, the services; KVM as the last look found it. Nothing looked at yet:
+        {}."""
+        seen = dict(self._learned)
+        if not seen:
+            return {}
+        when = time.strftime("%b %d %H:%M:%S", time.localtime(seen["at"]))
+        out: dict[str, dict[str, str]] = {}
+        if seen.get("virsh"):
+            virsh = {"Looked at": when, "virsh": f"{seen['virsh']} ({seen.get('version') or 'its version not said'})"}
+            for name in ("system", "session"):
+                read = seen.get(f"read {name}")
+                if read:
+                    virsh[f"qemu:///{name}"] = (f"{read['domains']} machines ({read['running']} running), "
+                                                f"{read['snapshots']} snapshots" + (
+                                                    f", {read['networks']} networks, {read['pools']} pools" if name == "system" else ""))
+                    if read["problems"]:
+                        virsh[f"qemu:///{name}: trouble"] = "; ".join(read["problems"])[:200]
+            out[cards.VIRSH] = virsh
+        daemons = {"Looked at": when, "Init system": seen["init"], "Distribution": seen["distribution"]}
+        if seen.get("virsh"):
+            daemons.update({"Daemons": seen["mode"], "qemu:///system": seen["system"], "qemu:///session": seen["session"],
+                            "Rights": seen["rights"]})
+        if seen.get("units"):
+            daemons["Services"] = ", ".join(f"{n} {s}" for n, s in sorted(seen["units"].items()))
+        sudo = self._sudo or seen.get("sudo")
+        if sudo:
+            daemons["sudo -n"] = "answers without a password" if sudo[1] else "asks a password: not used"
+        out[cards.DAEMONS] = daemons
+        out[cards.KVM] = {"Looked at": when, "KVM": seen["kvm"]}
+        return out
 
     # -- looking --------------------------------------------------------------------------------------------------
     def _probe(self, sh: Shell) -> Probe:
@@ -279,7 +335,9 @@ class LibvirtPlugin(MachinePlugin):
         sh = self.shell
         p = self._probe(sh)
         if not p.virsh:
-            return Context(sh, p)
+            ctx = Context(sh, p)
+            self._remember(ctx)
+            return ctx
         mode = mode_of(p)
 
         def sudo() -> bool:
@@ -292,7 +350,9 @@ class LibvirtPlugin(MachinePlugin):
                     self._sudo = (now, False)
             return self._sudo[1]
         parts = tuple((part, *part_state(p, mode, part)) for part in PART_DAEMON[mode])
-        return Context(sh, p, mode, access_of(p, sudo), parts, session_state(p))
+        ctx = Context(sh, p, mode, access_of(p, sudo), parts, session_state(p))
+        self._remember(ctx)
+        return ctx
 
     def _ready(self) -> Context:
         ctx = self._context()
@@ -363,6 +423,7 @@ class LibvirtPlugin(MachinePlugin):
         soft = f"libvirt {p.version} (virsh)" if p.version else "libvirt (virsh)"
         system = self._read(ctx, "system", self._system_parts(ctx))
         session = self._read(ctx, "session", ("domains",)) if self._session_read(ctx) else Connection("session", read=False)
+        self._remember(ctx, (system, session))
         facts = {"software": soft, "daemons": self._mode_words(ctx), "system": self._system_words(ctx),
                  "session": self._session_words(ctx), "kvm": kvm, "rights": ctx.access.words + (
                      "; qemu:///session as the user always" if not p.root else ""),
@@ -694,6 +755,7 @@ class LibvirtPlugin(MachinePlugin):
         self._woken = True
         system = self._read(ctx, "system", self._system_parts(ctx))
         session = self._read(ctx, "session", ("domains",)) if self._session_read(ctx) else Connection("session", read=False)
+        self._remember(ctx, (system, session))
         problems = [f"{c.uri}: {w}" for c in (system, session) for w in c.problems]
         lines = [f"{c.uri}: {plural(len(c.domains), 'virtual machine')}" for c in (system, session) if c.read and not c.problems]
         if problems:

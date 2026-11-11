@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.2.0 (2026-11-11)
+
+Its API on its page (plugin API 2.2, liminal-libs 1.49.0; the user: "each plugin should reflect the the API its attached
+to, and present links that provide documentation, the plugin interface should more or less contain what it already has,
+BUT, it should also expose more of what the API is about"). Needs liminal-libs>=1.49.0.
+
+- `apis` (apis.py): three cards, read on libvirt.org, docs.kernel.org, freedesktop.org, man7.org and sudo.ws on
+  2026-11-11. **virsh (libvirt)**: libvirt's documentation, virsh's manual, the API reference and its concepts, the
+  connection URIs, the QEMU/KVM driver, the domain, snapshot, network and storage XML formats, authentication and access
+  control, the releases (12.9.0 the newest); virsh's 13 command sections (domains, snapshots, virtual networks, storage
+  pools and its generic commands used; devices, volumes, checkpoints, node devices, interfaces, network ports, secrets,
+  network filters not), and 25 commands: the 13 it runs, each beside the libvirt function it is (virConnectListAllDomains,
+  virDomainGetInfo, virDomainCreate, virDomainShutdown, virDomainDestroy, virDomainSnapshotCreateXML,
+  virDomainRevertToSnapshot …), and the notable others (define, undefine, suspend, save, migrate, console …).
+  **libvirt's daemons and services**: the daemons page and each daemon's manual (libvirtd; virtqemud, virtnetworkd,
+  virtstoraged; virtlogd, virtlockd, libvirt-guests; the other drivers' daemons), socket activation, systemd, OpenRC,
+  sudo -n; the probe's systemctl show, service status, pgrep and id, sudo -n true, and the three ways a service is
+  started, none ever stopped. **KVM (the kernel's)**: the kernel's KVM documentation and API; /dev/kvm, the modules and
+  the processor's flags, which the plugin only looks at.
+- `api_facts()`: what its last look and read said, asking nothing (kept in one dict its copies share, forgotten when
+  let go): virsh and its version, each connection's machines, snapshots, networks and pools and its troubles; the
+  daemons (monolithic or modular, each connection's state), the rights and whether sudo -n answered, the init system and
+  the services; KVM as found.
+- Tests: the cards are sound; they name every command the plugin runs (the probe's and the read's as their scripts
+  write them, each change's as the stand-in machine was given it, under systemd, OpenRC and SysV scripts, as a member of
+  libvirt and through sudo -n) and no other; each virsh command names its libvirt function; the facts ask nothing; with
+  LIMINAL_VENDOR_PAGES=1, every address on the cards answers (all did on 2026-11-11).
+
 ## 0.1.1 (2026-11-08)
 
 Its icon is libvirt's own mark (the user: "the platform icon matches libvirt's ... libvirt has a can of tuna as an
