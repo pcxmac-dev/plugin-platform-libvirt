@@ -17,3 +17,10 @@ def test_every_plugin_here_conforms_to_the_class_contract():
     assert {p.ICON for p in found} == {"libvirt"}  # its own mark, not the platform's chip (the user, 2026-11-08)
     icons = (Path(liminal_libs.__file__).parent / "ui" / "static" / "icons.js").read_text(encoding="utf-8")
     assert {p.ICON for p in found} <= set(re.findall(r"(?m)^\s*([a-z]+):\s*'", icons))
+
+
+def test_it_is_drawn_under_the_platforms_virtualization_plugins():
+    """Its section of the platform's list (liminal-platform 0.26.0; the user, 2026-11-15: "platform needs a virtualization
+    plugins section"; "just like cloud plugins"): Virtualization plugins, beside the machine's own, the OS and the cloud
+    plugins."""
+    assert {p.SECTION for p in assert_module_conforms(module)} == {"virtualization"}
