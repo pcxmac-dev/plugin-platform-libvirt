@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 (2026-11-16)
+
+It works on any Linux the platform runs on, a WSL distribution included (the user, 2026-11-15: "wsl and firewall linux should always work under linux, if wsl prevents or misses some capability this should reflect in the plugin"). With
+liminal-libs 1.57.0 the library's check no longer refuses a WSL kernel, so the plugin applies there; its words and its
+tests still said "native Linux machine" and pinned the refusal.
+
+- Inside a WSL distribution the page ends with an **Under WSL** table (`under_wsl`): what WSL changes for
+  virtual machines (KVM and nested virtualization, systemd, WSL 1, and that the distribution runs only while Windows
+  keeps it started). It is there when the software is not installed yet, too.
+- On Windows and macOS nothing changes: no command runs, `applies` is False, every hook is refused. A platform on
+  Windows still never reaches into a WSL distribution from outside.
+- The tests pass on the library before 1.57.0 and after it.
+
 ## 0.2.1 (2026-11-15)
 
 Drawn under the platform's Virtualization plugins section, in the list on the left (the user: "platform needs a virtualization plugins section"; "just like cloud plugins"; "docker, libvirt, kubernetes, lxc should be in virtualization"): `SECTION = "virtualization"`, liminal-libs 1.51.0's machine-plugin attribute. liminal-platform 0.26.0 draws it; an older platform keeps the plugin under Machine plugins. Nothing else changes.

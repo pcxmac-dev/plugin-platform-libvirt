@@ -1,9 +1,12 @@
 """libvirt for Liminal (the user, 2026-11-08: "LXC/LXD plugins and LIBVIRT plugin for virtualization"; of the Linux
 plugins: "make sure its compatable with systemd/openrc ... make sure its compatible with major distributions and gentoo
-linux"): the virtual machines libvirt runs with QEMU/KVM on the native Linux machine the platform runs on, and nowhere
-else (the user: "the scope of linux administration is only on native linux O/S"; "it's not for administrating WSL
-instances"): on Windows, on macOS and inside a WSL distribution it runs no command at all (the library's
-machines.linux.why_not_native), asks nothing and offers no setup.
+linux"): the virtual machines libvirt runs with QEMU/KVM on the Linux the platform runs on, and nowhere else: a
+machine of its own, or a WSL distribution the platform runs inside (0.3.0; the user, 2026-11-15: "wsl and firewall
+linux should always work under linux, if wsl prevents or misses some capability this should reflect in the plugin":
+inside WSL its page ends with what WSL changes for virtual machines, `under_wsl`). On Windows and on macOS it runs no
+command at all (the library's machines.linux.why_not_native), asks nothing and offers no setup; a platform on
+Windows never reaches into a WSL distribution from outside (the user, 2026-11-08: "it's not for administrating WSL
+instances").
 
 Read through virsh on both connections, qemu:///system (root's daemon) and qemu:///session (the platform's user's
 own): the domains (`virsh list --all`, each one's dominfo: state, vCPUs, memory, autostart), their snapshots, the
@@ -29,6 +32,7 @@ qemu:///session's are always the user's own.
 """
 from __future__ import annotations
 
+import os
 import re
 import time
 from dataclasses import dataclass
@@ -41,7 +45,7 @@ from . import apis as cards
 from .inventory import ACTIVE, URIS, Connection, parse as parse_read, read_script, words_of
 from .system import (GROUPS, PROBE, Probe, distribution, family, init_words, install_words, kvm_words, parse as parse_probe)
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 SUDO_S = 300.0  # sudo -n's answer kept this long: a refusal is logged by sudo each time it is asked
 POWER = ("start", "shutdown", "reboot", "destroy")
 DONE = {"start": "started", "shutdown": "asked to shut down", "reboot": "asked to reboot", "destroy": "forced off"}
@@ -73,9 +77,42 @@ class Refusal(ValueError):
         self.accept = accept
 
 
+def _kvm_there() -> bool:
+    return os.path.exists("/dev/kvm")
+
+
+def under_wsl() -> dict | None:
+    """What running inside a WSL distribution changes for virtual machines, as a table for the page (0.3.0; the user,
+    2026-11-15: "if wsl prevents or misses some capability this should reflect in the plugin"). None on a machine of
+    its own, and with a library that does not say (before liminal-libs 1.57.0, which refused a WSL kernel)."""
+    said = getattr(linux, "wsl", None)
+    name = said() if said is not None else ""
+    if not name:
+        return None
+    generation = linux.wsl_generation()
+    rows = [["This Linux", f"WSL {generation or 2}: {name}", "a WSL distribution on Windows: its kernel is WSL's"]]
+    if generation == 1:
+        rows.append(["KVM", "none", "WSL 1 has no kernel of its own: no virtual machine can run in this distribution"])
+    else:
+        kvm = _kvm_there()
+        rows.append(["KVM", "/dev/kvm is here" if kvm else "no /dev/kvm",
+                     "virtual machines run on the processor itself: Windows passes its virtualization on to WSL" if kvm else
+                     "without it QEMU emulates the processor, many times slower. WSL 2 gives /dev/kvm when the processor has "
+                     "virtualization and Windows passes it on (`nestedVirtualization=true` under `[wsl2]` in .wslconfig, its "
+                     "default on Windows 11; then `wsl --shutdown` from Windows)"])
+    runs = linux.systemd_runs()
+    rows.append(["Init", "systemd" if runs else "not systemd", "libvirt's daemons are started as on any Linux" if runs else
+                 "libvirt's daemons are systemd units here: `[boot]` `systemd=true` in /etc/wsl.conf turns systemd on (then "
+                 "`wsl --shutdown` from Windows)"])
+    rows.append(["Running", "while Windows keeps it started",
+                 "Windows stops a WSL distribution once nothing uses it: its virtual machines stop with it"])
+    return {"title": "Under WSL", "note": "What running inside a WSL distribution changes for this plugin.",
+            "columns": [{"title": "What"}, {"title": "Here"}, {"title": "What it means"}], "rows": rows}
+
+
 def why_not_native(system: str | None = None, release: str | None = None, env=None) -> str:
-    """Why the machine the platform runs on is not a native Linux one, in words ("" when it is): the library's check
-    (liminal-libs 1.27.0, shared with the Linux administration and firewall plugins)."""
+    """Why the machine the platform runs on is not one this plugin is for, in words ("" on Linux; a WSL distribution
+    included with liminal-libs 1.57.0): the library's check (shared with the Linux administration and firewall plugins)."""
     return linux.why_not_native("libvirt", system, release, env)
 
 
@@ -231,12 +268,12 @@ def start_command(init: str, unit: str) -> list[str]:
 
 
 class LibvirtPlugin(MachinePlugin):
-    """libvirt's virtual machines on this native Linux machine: read, and changed only when asked."""
+    """libvirt's virtual machines on the Linux the platform runs on: read, and changed only when asked."""
 
     name = "libvirt"
     title = "libvirt"
-    about = ("libvirt's virtual machines (QEMU/KVM) on the native Linux machine the platform runs on, never a WSL "
-             "distribution: qemu:///system's and the user's qemu:///session's, their snapshots, the networks, the storage "
+    about = ("libvirt's virtual machines (QEMU/KVM) on the Linux the platform runs on (a WSL distribution it runs "
+             "inside too): qemu:///system's and the user's qemu:///session's, their snapshots, the networks, the storage "
              "pools, KVM and libvirt's services; changed only when asked")
     api = "2.2"
     # what it attaches to (plugin API 2.2): virsh and the libvirt API under it, libvirt's daemons and services, KVM
@@ -261,13 +298,14 @@ class LibvirtPlugin(MachinePlugin):
 
     @property
     def shell(self) -> Shell:
-        """This native Linux machine's commands (root through sudo -n); refused anywhere else, and for a WSL target."""
+        """The commands of the Linux the platform runs on (root through sudo -n); refused anywhere else, and for a WSL
+        distribution reached from Windows (a target of `wsl -d`)."""
         note = self.not_for_here()
         if note:
             raise LibvirtError(note)
         sh = self._shell if self._shell is not None else Shell("local", runner=self._runner)
         if sh.target != "local":
-            raise LibvirtError(f"libvirt is for this native Linux machine, never {sh.where}")
+            raise LibvirtError(f"libvirt is for the Linux the platform runs on, never {sh.where}")
         return sh
 
     def detach(self) -> None:
@@ -398,7 +436,7 @@ class LibvirtPlugin(MachinePlugin):
         return state == "running" or (state in ("idle", "none") and self._woken)
 
     def present(self) -> bool:
-        """virsh installed on a native Linux machine: never on Windows, macOS or in WSL."""
+        """virsh installed on the Linux the platform runs on: never on Windows or macOS."""
         if self.not_for_here():
             return False
         try:
@@ -408,6 +446,14 @@ class LibvirtPlugin(MachinePlugin):
 
     # -- the status -----------------------------------------------------------------------------------------------
     def status(self) -> dict:
+        """What the page shows; inside a WSL distribution its tables end with what WSL changes (under_wsl)."""
+        st = self._status()
+        table = None if st.get("applies") is False else under_wsl()
+        if table is not None:
+            st["tables"] = [*st.get("tables", []), table]
+        return st
+
+    def _status(self) -> dict:
         note = self.not_for_here()
         if note:  # not for this machine at all: asked nothing, no setup offered
             return self.not_here_status(note, tables=[], forms=[], actions=[])

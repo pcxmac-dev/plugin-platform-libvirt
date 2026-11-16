@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "plugin-platform-libvirt"
-version = "0.2.1"  # the plugin's own release (CHANGELOG.md); the app shows it on the Plugins view
+version = "0.3.0"  # the plugin's own release (CHANGELOG.md); the app shows it on the Plugins view
 description = "libvirt for Liminal: the virtual machines libvirt runs with QEMU/KVM on the native Linux machine the platform runs on (qemu:///system's and the user's qemu:///session's), their snapshots, networks, storage pools, KVM and libvirt's services; changed only when asked."
 readme = "README.md"
 requires-python = ">=3.10"

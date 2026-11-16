@@ -1,12 +1,13 @@
 # plugin-platform-libvirt
 
-libvirt for Liminal: the virtual machines libvirt runs with QEMU/KVM on the native Linux machine the platform runs
-on (qemu:///system's and the user's qemu:///session's), their snapshots, the networks, the storage pools, KVM and
+libvirt for Liminal: the virtual machines libvirt runs with QEMU/KVM on the Linux the platform runs on, a WSL
+distribution it runs inside included (qemu:///system's and the user's qemu:///session's), their snapshots, the networks, the storage pools, KVM and
 libvirt's services; changed only when asked.
 
 The user's words (2026-11-08): "LXC/LXD plugins and LIBVIRT plugin for virtualization"; of the Linux plugins: "make
 sure its compatable with systemd/openrc ... make sure its compatible with major distributions and gentoo linux"; "the
-scope of linux administration is only on native linux O/S"; "it's not for administrating WSL instances".
+scope of linux administration is only on native linux O/S"; "it's not for administrating WSL instances"; and, 2026-11-15:
+"wsl and firewall linux should always work under linux, if wsl prevents or misses some capability this should reflect in the plugin".
 
 ## What it does
 
@@ -71,11 +72,17 @@ libvirt-daemon-system`), Fedora (`dnf install @virtualization` and the modular s
 libvirt-daemon`, `rc-update add libvirtd`), NixOS (`virtualisation.libvirtd.enable`), Void (`xbps-install libvirt
 qemu`).
 
-## Native Linux only
+## On Linux, the platform's own
 
-On Windows, on macOS and inside a WSL distribution (its kernel's release names Microsoft or WSL, or WSL's variables
-are set) it runs no command at all: its status says why with `applies` False, so the platform shows it as not for
-this machine and offers no setup; every hook is refused. The check is the library's (`machines.linux.why_not_native`).
+It works on the Linux the platform runs on: a machine of its own, or a WSL distribution the platform runs inside
+(0.3.0, with liminal-libs 1.57.0). Inside WSL its page ends with an **Under WSL** table saying what WSL changes for
+virtual machines: whether `/dev/kvm` is there (WSL 2 gives it when the processor has virtualization and Windows passes
+it on), whether systemd runs, that WSL 1 can run none, and that the distribution, and what runs in it, stops when
+Windows stops it.
+
+On Windows and on macOS it runs no command at all: its status says why with `applies` False, so the platform shows it
+as not for this machine and offers no setup; every hook is refused. A platform on Windows never reaches into a WSL
+distribution from outside. The check is the library's (`machines.linux.why_not_native`).
 
 ## Its API
 
