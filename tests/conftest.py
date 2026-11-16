@@ -19,3 +19,13 @@ def no_processes_and_no_network(monkeypatch):
     monkeypatch.setattr(subprocess, "Popen", started)
     monkeypatch.setattr(socket, "create_connection", reached)
     monkeypatch.setattr(socket.socket, "connect", reached)
+
+
+@pytest.fixture(autouse=True)
+def a_machine_of_its_own(monkeypatch):
+    """The tests say what machine the plugin is on; the one they happen to run on (a WSL distribution, where the
+    plugin's page ends with its "Under WSL" table) is not read."""
+    from liminal_libs.machines import linux as linux_mod
+
+    if hasattr(linux_mod, "wsl"):
+        monkeypatch.setattr(linux_mod, "wsl", lambda release=None, env=None: "")
