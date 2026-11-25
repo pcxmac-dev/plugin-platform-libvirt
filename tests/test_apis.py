@@ -16,14 +16,14 @@ from liminal_libs.sources import apis as A
 from liminal_libs.sources.conformance import problems
 from plugin_platform_libvirt import apis as cards
 from plugin_platform_libvirt import inventory, system
-from test_plugin import FakeLinux, plugin
+from test_plugin import SUDO, FakeLinux, plugin
 
 
 def virsh_verb(words) -> str:
     """A virsh command by its command word, its connection and arguments left out: list, snapshot-revert, --version."""
     words = list(words)
-    if words[:2] == ["sudo", "-n"]:
-        words = words[2:]
+    if words[:3] == SUDO:
+        words = words[3:]
     words = words[1:]  # virsh itself
     if words[:1] == ["-c"]:
         words = words[2:]
@@ -32,8 +32,8 @@ def virsh_verb(words) -> str:
 
 def service_shape(words) -> str:
     words = list(words)
-    if words[:2] == ["sudo", "-n"] and words[2:] != ["true"]:
-        words = words[2:]
+    if words[:3] == SUDO:  # the card names sudo's check by its words, `sudo -n true`, without the --
+        words = words[3:] if words[3:] != ["true"] else ["sudo", "-n", "true"]
     tool, rest = words[0], words[1:]
     if tool in ("rc-service", "service"):
         return f"{tool} {rest[-1]}"
@@ -95,7 +95,7 @@ def test_the_daemons_card_names_what_is_asked_of_the_machine(monkeypatch):
                        session_sockets=(), session_daemons=())
     plugin(devuan).service("libvirtd", "start")
     ran = {service_shape(c) for f in (stopped, outsider, gentoo, devuan) for c in f.calls
-           if "sh" not in c[:3] and "/usr/bin/virsh" not in c[:3]}
+           if "sh" not in c[:4] and "/usr/bin/virsh" not in c[:4]}  # sudo -n -- before them when through sudo
     for shape, written in (("systemctl show", "systemctl show -p Id,LoadState,ActiveState,SubState,UnitFileState,Description"),
                            ("service status", 'service "$n" status'), ("pgrep", 'pgrep -u 0 -x "$d"'), ("id", "id -nG")):
         assert written in system.PROBE, written  # the probe's, as its script writes them

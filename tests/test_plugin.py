@@ -20,6 +20,9 @@ from plugin_platform_libvirt import MACHINE, LibvirtError, LibvirtPlugin, Refusa
 from plugin_platform_libvirt.__main__ import main
 
 RECORDED = Path(__file__).parent / "recorded"
+# the library's root prefix (liminal-libs 1.80.0 machines/linux.py Shell.prefix: `sudo -n --`, so a command beginning
+# with a dash is never read as sudo's option); until then `sudo -n`
+SUDO = ["sudo", "-n", "--"]
 OS = {
     "fedora": 'ID=fedora\nNAME="Fedora Linux"\nPRETTY_NAME="Fedora Linux 41 (Workstation Edition)"\nVERSION_ID=41',
     "debian": 'PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"\nNAME="Debian GNU/Linux"\nVERSION_ID="12"\nID=debian',
@@ -117,8 +120,8 @@ class FakeLinux:
 
     def __call__(self, args, timeout):
         self.calls.append(list(args))
-        root = args[:2] == ["sudo", "-n"]
-        cmd = args[2:] if root else args
+        root = args[:3] == SUDO
+        cmd = args[3:] if root else args
         if root and not self.sudo:
             return 1, "", "sudo: a password is required\n"
         if cmd == ["true"]:
@@ -322,7 +325,7 @@ def test_debians_libvirtd_under_systemd_and_gentoos_under_openrc(monkeypatch):
     start = {r[0]: r[4] for r in table(st, "Daemons")["rows"]}["libvirtd.service"]
     assert start == {"form": "service", "title": "Start…", "values": {"unit": "libvirtd.service", "action": "start"}, "label": "Start libvirtd.service"}
     assert plugin(stopped).service("libvirtd.service")["said"] == "libvirtd.service started (systemctl start libvirtd.service)"
-    assert stopped.calls[-1] == ["sudo", "-n", "systemctl", "start", "libvirtd.service"]
+    assert stopped.calls[-1] == [*SUDO, "systemctl", "start", "libvirtd.service"]
     with pytest.raises(Refusal, match="not one of libvirt's monolithic services here"):
         plugin(stopped).service("virtqemud.socket")
     with pytest.raises(Refusal, match="never stopped"):
@@ -380,9 +383,9 @@ def test_the_rights_the_libvirt_group_root_sudo_and_none(monkeypatch):
     again = plugin(kept)
     again.status()
     again.status()
-    assert kept.calls.count(["sudo", "-n", "true"]) == 1  # sudo's answer kept: a refusal is not logged by sudo every read
+    assert kept.calls.count([*SUDO, "true"]) == 1  # sudo's answer kept: a refusal is not logged by sudo every read
     plugin(sudo).power("win11", "start")
-    assert sudo.calls[-1] == ["sudo", "-n", *SYS, "start", "--domain", "win11"]
+    assert sudo.calls[-1] == [*SUDO, *SYS, "start", "--domain", "win11"]
     plugin(sudo).power("boxes-alpine", "start", "session")
     assert sudo.calls[-1] == ["/usr/bin/virsh", "-c", "qemu:///session", "start", "--domain", "boxes-alpine"]
     none = FakeLinux(groups=("ciara", "wheel"), sudo=False)
