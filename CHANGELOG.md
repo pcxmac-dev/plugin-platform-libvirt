@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.3.1 (2026-11-25)
+
+Its changes are asked only from the page (the sweep after the independent review's finding PLT-H1; the user's choice,
+2026-11-25: plugin releases, each plugin declaring its change actions page-only). The platform hands an ask over HTTP
+(`POST /api/machines/libvirt/ask`, two headers and no sign-in) straight to a hook, so any program on the machine asked
+every hook this plugin has.
+
+- **`PAGE_ONLY_HOOKS`** (liminal-libs 1.66.0's word): `power`, `autostart`, `snapshot`, `revert`, `service` and
+  `wake`. Another plugin's ask of one is refused (403), and liminal-platform 0.34.0 refuses one over HTTP (401) unless
+  its login shows that you are at the page. Before, a program of any account on the machine asked them, a second
+  confirmation (`accept_destroy`, `accept_revert`) being an argument the asker sets: a machine started, shut down or
+  forced off, or reverted to a snapshot (what changed since lost for good), with the platform's rights over
+  qemu:///system (the libvirt group, root, or root through `sudo -n`: none asks a password); one of libvirt's services
+  started as root; and its idle daemons, with the user's own session daemon, started by a read nobody asked for
+  (`wake`). A platform that holds no login asks them as before. The 401 rests on the login's word that your browser
+  is signed in, and a local login signs `secret` and `default` in with no password, so a program on the machine can
+  sign itself in and ask them still: a proof that a program cannot make is the login's and the platform's to give.
+- Asked by anyone, as before: `present` and `status` (reads, which start nothing). No plugin's code asks any hook of
+  this one (2026-11-25). `run` (virsh with any arguments) is not among the six: the platform asks it by no name, over
+  HTTP or for a plugin (its `NOT_ASKED`), and the command line calls it in its own process, as it calls every hook.
+- No new floor: a liminal-libs before 1.66.0 holds no hook to who asks it, and liminal-platform 0.34.0 then reads the
+  word from the plugin itself.
+- Tests: `tests/test_who_asks.py`, through the library's own App over the stand-in machine (skipped on a liminal-libs
+  before 1.66.0): each of the six refused to another plugin and to an ask that names no one, every confirmation said,
+  no command run; each run when the page asks it, as the libvirt group's member and as root through `sudo -n`; the
+  status answered to a plugin; idle daemons read by the page's ask alone. Taking a hook out of the word fails them.
+
+Needs liminal-libs>=1.49.0.
+
 ## 0.3.0 (2026-11-16)
 
 It works on any Linux the platform runs on, a WSL distribution included (the user, 2026-11-15: "wsl and firewall linux should always work under linux, if wsl prevents or misses some capability this should reflect in the plugin"). With

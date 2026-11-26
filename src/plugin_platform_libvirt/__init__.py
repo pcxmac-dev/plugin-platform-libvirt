@@ -25,6 +25,14 @@ members manage the system's machines), plainly when the platform is root, else a
 linux.Shell (sudo -n, never a password asked); when none of that works the status says how to give the rights.
 qemu:///session's are always the user's own.
 
+Who may ask its changes (0.3.1, the sweep after the review's PLT-H1; liminal-libs 1.66.0's apps/asking.py): power,
+autostart, snapshot, revert, service and wake are asked only from the page (PAGE_ONLY_HOOKS): another plugin's ask is
+refused, and liminal-platform 0.34.0 asks its login whether you are at the page. Before, any program on this machine
+asked them with two headers, a second confirmation being only an argument: a machine forced off, or reverted to a
+snapshot, with the platform's rights over qemu:///system (the libvirt group, root, sudo -n); a service started as root;
+idle daemons started by a read nobody asked for. Its status is asked by anyone, and the command line calls the code
+itself. `run` is the command line's alone: the platform asks it by no name.
+
     python -m plugin_platform_libvirt status [--wake] | wake | start|shutdown|reboot NAME [--session]
         | destroy NAME [--session] [--yes] | autostart NAME on|off [--session]
         | snapshot NAME [SNAPSHOT] [--description TEXT] [--session] | revert NAME SNAPSHOT [--session] [--yes]
@@ -45,7 +53,7 @@ from . import apis as cards
 from .inventory import ACTIVE, URIS, Connection, parse as parse_read, read_script, words_of
 from .system import (GROUPS, PROBE, Probe, distribution, family, init_words, install_words, kvm_words, parse as parse_probe)
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 SUDO_S = 300.0  # sudo -n's answer kept this long: a refusal is logged by sudo each time it is asked
 POWER = ("start", "shutdown", "reboot", "destroy")
 DONE = {"start": "started", "shutdown": "asked to shut down", "reboot": "asked to reboot", "destroy": "forced off"}
@@ -283,6 +291,14 @@ class LibvirtPlugin(MachinePlugin):
     ICON = "libvirt"  # its logo's tin of penguins, the lid rolled back on its key (liminal-libs 1.34.0)
     SECTION = "virtualization"  # drawn under the platform's Virtualization plugins (liminal-platform 0.26.0)
     HOOKS = (*MachinePlugin.HOOKS, "power", "autostart", "snapshot", "revert", "service", "wake")
+    # Its changes, asked only from its page (0.3.1, the sweep after the review's PLT-H1; liminal-libs 1.66.0's
+    # apps/asking.py): another plugin's ask is refused (403), and liminal-platform 0.34.0 refuses one over HTTP (401)
+    # unless its login shows that you are at the page. Before, any program on this machine could ask them with two
+    # headers, a second confirmation (accept_destroy, accept_revert) being only an argument: a machine forced off or
+    # reverted with the platform's rights over qemu:///system, a service started as root, idle daemons started by a read
+    # (wake). The command line calls their code directly, not through an ask; present and status are asked by anyone.
+    # `run` is not among them: the platform asks it by no name (its NOT_ASKED), as no plugin's command.
+    PAGE_ONLY_HOOKS = ("power", "autostart", "snapshot", "revert", "service", "wake")
 
     def __init__(self, shell: Shell | None = None, runner=None, native: str | None = None):
         self._shell = shell

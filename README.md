@@ -111,6 +111,16 @@ connection, accept_revert)`, `service(unit, action)` (`start` only), `wake()` (R
 snapshot, a change not accepted yet) is a `ValueError` naming the argument that accepts it, which the page asks as a
 second confirmation.
 
+Who may ask them (0.3.1; the sweep after the independent review's finding PLT-H1, 2026-11-25): `power`, `autostart`,
+`snapshot`, `revert`, `service` and `wake` are the plugin's `PAGE_ONLY_HOOKS` (liminal-libs 1.66.0's word). Another
+plugin's ask of one is refused, and liminal-platform 0.34.0 refuses one over HTTP unless its login shows that you are
+at the page. Before, any program on the machine could ask them with two headers and send a second confirmation itself:
+a machine forced off, or reverted to a snapshot, with the platform's rights over qemu:///system. `present` and `status`
+are asked by anyone, as before. `run` is the command line's: the platform asks it by no name. The command line calls
+the same code in its own process, not through an ask. The platform's check rests on its login's word that your
+browser is signed in, and a local login signs `secret` and `default` in with no password: it does not stop a program
+on the machine that signs itself in.
+
 ## From the command line
 
 ```
